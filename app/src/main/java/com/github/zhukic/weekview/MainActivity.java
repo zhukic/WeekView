@@ -1,33 +1,49 @@
 package com.github.zhukic.weekview;
 
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements WeekView.WeekEventClickListener {
+public class MainActivity extends AppCompatActivity {
+
+    RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        WeekView weekView = (WeekView) findViewById(R.id.weekView);
+        ViewPager viewPager = (ViewPager) findViewById(R.id.vp);
 
-        WeekEvent weekEvent1 = new WeekEvent("Mistsubishi", 11, 14, 0);
-        WeekEvent weekEvent2 = new WeekEvent("WATT", 18, 20, 3);
-        WeekEvent weekEvent3 = new WeekEvent("Timber", 15, 17, 5);
+        viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
+            @Override
+            public Fragment getItem(int position) {
+                return new FragmentWeek();
+            }
 
-        weekView.setWeekEvents(Arrays.asList(weekEvent1, weekEvent2, weekEvent3));
-        weekView.setWeekEventClickListener(this);
+            @Override
+            public int getCount() {
+                return 600;
+            }
+        });
 
-    }
+        viewPager.setCurrentItem(300);
 
-    @Override
-    public void onWeekEventClick(WeekEvent weekEvent) {
-        Toast.makeText(this, weekEvent.getName(), Toast.LENGTH_SHORT).show();
+        recyclerView = (RecyclerView) findViewById(R.id.rv);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(new Adapter());
+        recyclerView.setNestedScrollingEnabled(false);
+
     }
 
 }

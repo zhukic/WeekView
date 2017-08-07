@@ -11,13 +11,17 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Scroller;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +49,6 @@ public class WeekView extends View {
 
     private float weekEventTextSizePadding;
 
-    private Float maxCurrentPointY = null;
-
     private Paint axisPaint;
     private Paint weekEventPaint;
     private Paint weekEventNamePaint;
@@ -60,33 +62,6 @@ public class WeekView extends View {
 
         @Override
         public boolean onDown(MotionEvent e) {
-            if (maxCurrentPointY == null) {
-                maxCurrentPointY = (hourHeight * 24) - getHeight();
-            }
-            return true;
-        }
-
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            Log.d(TAG, "onScroll " + distanceX + " " + distanceY);
-
-            currentPoint.y += distanceY;
-
-            if (currentPoint.y >= maxCurrentPointY) {
-                currentPoint.y = maxCurrentPointY;
-            } else if (currentPoint.y < 0) {
-                currentPoint.y = 0;
-            }
-
-            ViewCompat.postInvalidateOnAnimation(WeekView.this);
-            return true;
-        }
-
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            Log.d(TAG, "onFling");
-            scroller.fling((int) e1.getX(), (int) e1.getY(), (int) velocityX, (int) velocityY, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
-            ViewCompat.postInvalidateOnAnimation(WeekView.this);
             return true;
         }
 
@@ -109,6 +84,8 @@ public class WeekView extends View {
 
     private WeekEventClickListener weekEventClickListener;
 
+    private RecyclerView hoursRecyclerView;
+
     public WeekView(Context context) {
         super(context);
     }
@@ -125,7 +102,7 @@ public class WeekView extends View {
 
     private void init(AttributeSet attrs) {
 
-        scroller = new Scroller(getContext(), null, true);
+        scroller = new Scroller(getContext(), new FastOutSlowInInterpolator());
         gestureDetector = new GestureDetectorCompat(getContext(), onGestureListener);
 
         TypedArray a = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.WeekView, 0, 0);
@@ -149,13 +126,21 @@ public class WeekView extends View {
         weekEventNamePaint.setColor(ContextCompat.getColor(getContext(), android.R.color.white));
         weekEventNamePaint.setTextAlign(Paint.Align.LEFT);
 
+        setVerticalFadingEdgeEnabled(true);
+
+        weekEvents = new ArrayList<>();
+        weekEventRectFs = new ArrayList<>();
+
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (int) (hourHeight * 24));
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        Log.d(TAG, "onDraw");
 
         drawAxis(canvas);
 
@@ -164,7 +149,10 @@ public class WeekView extends View {
     }
 
     private void drawAxis(Canvas canvas) {
-        for (int i = 1; i <= 24; i++) {
+
+        Log.d(TAG, "currentPointY " + currentPoint.y);
+
+        for (int i = 1; i <= 23; i++) {
             float left = 0;
             float top = i * hourHeight - currentPoint.y;
             float right = getWidth();
@@ -231,7 +219,6 @@ public class WeekView extends View {
         }
 
     }
-
 
     public interface WeekEventClickListener {
 
