@@ -10,14 +10,16 @@ import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GestureDetectorCompat;
-import android.support.v4.view.ViewCompat;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v7.widget.RecyclerView;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Scroller;
@@ -45,13 +47,13 @@ public class WeekView extends View {
 
     private float weekEventRectCornerWidth;
 
-    private float weekEventTextSize;
+    private float weekEventNameTextSize;
 
-    private float weekEventTextSizePadding;
+    private float weekEventNamePadding;
 
     private Paint axisPaint;
     private Paint weekEventPaint;
-    private Paint weekEventNamePaint;
+    private TextPaint weekEventNamePaint;
 
     private Scroller scroller;
     private PointF currentPoint = new PointF(0f, 0f);
@@ -111,8 +113,8 @@ public class WeekView extends View {
         hourHeight = a.getDimensionPixelSize(R.styleable.WeekView_hourHeight, 0);
         dividerWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
         weekEventRectCornerWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
-        weekEventTextSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics());
-        weekEventTextSizePadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 4, getResources().getDisplayMetrics());
+        weekEventNameTextSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics());
+        weekEventNamePadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 4, getResources().getDisplayMetrics());
 
         axisPaint = new Paint();
         axisPaint.setColor(dividerColor);
@@ -121,10 +123,9 @@ public class WeekView extends View {
         weekEventPaint = new Paint();
         weekEventPaint.setColor(ContextCompat.getColor(getContext(), R.color.colorPrimary));
 
-        weekEventNamePaint = new Paint();
-        weekEventNamePaint.setTextSize(weekEventTextSize);
+        weekEventNamePaint = new TextPaint();
+        weekEventNamePaint.setTextSize(weekEventNameTextSize);
         weekEventNamePaint.setColor(ContextCompat.getColor(getContext(), android.R.color.white));
-        weekEventNamePaint.setTextAlign(Paint.Align.LEFT);
 
         setVerticalFadingEdgeEnabled(true);
 
@@ -183,9 +184,21 @@ public class WeekView extends View {
             WeekEventRectF weekEventRectF = new WeekEventRectF(left, top, right, bottom, weekEvent);
             weekEventRectFs.add(weekEventRectF);
 
+            int weekNameWidth = (int) (right - left - weekEventNamePadding * 2);
+
+            StaticLayout staticLayout = new StaticLayout(TextUtils.ellipsize(weekEvent.getName(), weekEventNamePaint,
+                    weekNameWidth, TextUtils.TruncateAt.END), weekEventNamePaint,
+                    weekNameWidth, Layout.Alignment.ALIGN_CENTER, 0, 0, false);
+
             canvas.drawRoundRect(weekEventRectF, weekEventRectCornerWidth, weekEventRectCornerWidth, weekEventPaint);
 
-            canvas.drawText(weekEvent.getName(), (left + weekEventTextSizePadding), (bottom + top) / 2, weekEventNamePaint);
+            canvas.save();
+
+            canvas.translate(left + weekEventNamePadding, (bottom + top) / 2 - staticLayout.getHeight() / 2);
+
+            staticLayout.draw(canvas);
+
+            canvas.restore();
 
         }
 
